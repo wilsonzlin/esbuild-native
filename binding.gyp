@@ -20,7 +20,7 @@
           "actions": [
             {
               "action_name": "build esbuild-lib static library",
-              "inputs": ["<!@(find lib/vendor/github.com/evanw/esbuild -type f -name '*.go')"],
+              "inputs": ["lib/build.sh", "<!@(find lib/vendor/github.com/evanw/esbuild -type f -name '*.go')"],
               "outputs": ["lib/build/libesbuild.h", "lib/build/libesbuild.a"],
               "action": ['bash', 'lib/build.sh'],
             },
@@ -33,9 +33,9 @@
           "actions": [
             {
               "action_name": "build esbuild-lib DLL",
-              "inputs": ["<!@(cd lib/vendor/github.com/evanw/esbuild & dir *.go /B /S)"],
+              "inputs": ["lib/list-go-files.ps1", "lib/build.ps1", "<!@(powershell lib/list-go-files.ps1)"],
               "outputs": ["lib/build/esbuild.h", "lib/build/esbuild.dll", "lib/build/esbuild.dll.h"],
-              "action": ['lib/build.ps1'],
+              "action": ['powershell', 'lib/build.ps1'],
             },
           ],
         }],

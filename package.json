@@ -6,7 +6,7 @@
     "build/Release/binding.node"
   ],
   "scripts": {
-    "build-init": "node-gyp configure",
+    "init": "node-gyp configure",
     "build": "node-gyp build",
     "clean": "node-gyp clean"
   },
