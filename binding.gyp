@@ -33,7 +33,7 @@
           "actions": [
             {
               "action_name": "build esbuild-lib DLL",
-              "inputs": ["lib/list-go-files.ps1", "lib/build.ps1", "<!@(powershell lib/list-go-files.ps1)"],
+              "inputs": ["lib/build.ps1", "<!@(powershell lib/list-go-files.ps1)"],
               "outputs": ["lib/build/esbuild.h", "lib/build/esbuild.dll", "lib/build/esbuild.dll.h"],
               "action": ['powershell', 'lib/build.ps1'],
             },
