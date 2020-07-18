@@ -5,11 +5,12 @@
 #define NAPI_VERSION 4
 #include <node_api.h>
 
+#ifdef _MSC_VER
+#include <MemoryModule.h>
+#include <esbuild.dll.h>
+#else
 #include <libesbuild.h>
-
-// We need to use a threadsafe_function as the Goroutines can call us from any thread.
-bool js_receiver_created = false;
-napi_threadsafe_function js_receiver;
+#endif
 
 static char const* JS_RECEIVER_DESC = "esbuild-native JavaScript receiver callback";
 static char const* ERRMSG_INTERR_CREATE_RES_BUFFER_FAILED = "Failed to create result buffer";
@@ -26,6 +27,10 @@ struct call_js_receiver_data {
   void* min_code;
   unsigned long long min_code_len;
 };
+
+// We need to use a threadsafe_function as the Goroutines can call us from any thread.
+bool js_receiver_created = false;
+napi_threadsafe_function js_receiver;
 
 void call_js_receiver(
   napi_env env,

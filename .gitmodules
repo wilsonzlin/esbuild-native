@@ -1,0 +1,6 @@
+[submodule "esbuild-lib"]
+	path = lib/vendor/github.com/evanw/esbuild
+	url = git@github.com:wilsonzlin/esbuild-lib.git
+[submodule "MemoryModule"]
+	path = lib/MemoryModule
+	url = https://github.com/fancycode/MemoryModule.git
