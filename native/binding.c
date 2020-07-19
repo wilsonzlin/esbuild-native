@@ -103,13 +103,13 @@ napi_value node_method_start_service(napi_env env, napi_callback_info info) {
   napi_value undefined = get_undefined(env);
 
   if (js_receiver_created) {
-    assert_ok(napi_throw_error(env, "STARTED", "Service already started"));
+    assert_ok(napi_throw_error(env, NULL, "Service already started"));
     return undefined;
   }
 
   napi_value js_receiver_desc;
   if (napi_conststr(env, JS_RECEIVER_DESC, &js_receiver_desc) != napi_ok) {
-    assert_ok(napi_throw_error(env, "INTERR_CREATE_JS_RECEIVER_DESC", "Failed to create JS receiver callback description string"));
+    assert_ok(napi_throw_error(env, NULL, "Failed to create JS receiver callback description string"));
     return undefined;
   }
 
@@ -136,7 +136,7 @@ napi_value node_method_start_service(napi_env env, napi_callback_info info) {
     // napi_threadsafe_function* result.
     &js_receiver
   ) != napi_ok) {
-    assert_ok(napi_throw_error(env, "INTERR_CREATE_JS_RECEIVER", "Failed to create JS receiver"));
+    assert_ok(napi_throw_error(env, NULL, "Failed to create JS receiver"));
     return undefined;
   }
 
@@ -148,12 +148,12 @@ napi_value node_method_stop_service(napi_env env, napi_callback_info info) {
   napi_value undefined = get_undefined(env);
 
   if (!js_receiver_created) {
-    assert_ok(napi_throw_error(env, "STOPPED", "Service not started"));
+    assert_ok(napi_throw_error(env, NULL, "Service not started"));
     return undefined;
   }
 
   if (napi_release_threadsafe_function(js_receiver, napi_tsfn_abort) != napi_ok) {
-    assert_ok(napi_throw_error(env, "INTERR_DESTROY_JS_RECEIVER", "Failed to destroy JS receiver"));
+    assert_ok(napi_throw_error(env, NULL, "Failed to destroy JS receiver"));
     return undefined;
   }
 
@@ -164,6 +164,10 @@ napi_value node_method_stop_service(napi_env env, napi_callback_info info) {
 napi_value node_method_minify(napi_env env, napi_callback_info info) {
   napi_value undefined = get_undefined(env);
 
+  bool buffer_arg_ref_set = false;
+  napi_ref buffer_arg_ref;
+  struct invocation_data* invocation_data = NULL;
+
   size_t argc = 1;
   napi_value argv[1];
   napi_value _this;
@@ -171,32 +175,32 @@ napi_value node_method_minify(napi_env env, napi_callback_info info) {
 
   // Get the arguments.
   if (napi_get_cb_info(env, info, &argc, argv, &_this, &_data) != napi_ok) {
-    assert_ok(napi_throw_error(env, "INTERR_GET_CB_INFO", "Failed to get callback info"));
+    assert_ok(napi_throw_error(env, NULL, "Failed to get callback info"));
     return undefined;
   }
 
   // Ensure buffer lives long enough until minification has finished.
   napi_value buffer_arg = argv[0];
-  napi_ref buffer_arg_ref;
   if (napi_create_reference(env, buffer_arg, 1, &buffer_arg_ref) != napi_ok) {
-    assert_ok(napi_throw_error(env, "INTERR_CREATE_SRC_BUFFER_REF", "Failed to create reference for source buffer"));
-    return undefined;
+    assert_ok(napi_throw_error(env, NULL, "Failed to create reference for source buffer"));
+    goto cleanup;
   }
+  buffer_arg_ref_set = true;
 
   // Get pointer to bytes in buffer.
   void* buffer_data;
   size_t buffer_len;
   if (napi_get_buffer_info(env, buffer_arg, &buffer_data, &buffer_len) != napi_ok
       || buffer_len == 0 || buffer_data == NULL) {
-    assert_ok(napi_throw_type_error(env, "GET_SRC_BUFFER_INFO", "Failed to read source buffer"));
-    return undefined;
+    assert_ok(napi_throw_type_error(env, NULL, "Failed to read source buffer"));
+    goto cleanup;
   }
 
   napi_deferred deferred;
   napi_value promise;
   if (napi_create_promise(env, &deferred, &promise) != napi_ok) {
-    assert_ok(napi_throw_error(env, "INTERR_CREATE_PROMISE", "Failed to create Promise"));
-    return undefined;
+    assert_ok(napi_throw_error(env, NULL, "Failed to create Promise"));
+    goto cleanup;
   }
 
   GoString buffer_as_gostr = {
@@ -204,7 +208,7 @@ napi_value node_method_minify(napi_env env, napi_callback_info info) {
     .n = buffer_len,
   };
 
-  struct invocation_data* invocation_data = assert_malloc(sizeof(struct invocation_data));
+  invocation_data = assert_malloc(sizeof(struct invocation_data));
   invocation_data->deferred = deferred;
   invocation_data->src_buffer_ref = buffer_arg_ref;
 
@@ -215,6 +219,14 @@ napi_value node_method_minify(napi_env env, napi_callback_info info) {
   );
 
   return promise;
+
+cleanup:
+  if (buffer_arg_ref_set) {
+    // Release source buffer.
+    assert_ok(napi_delete_reference(env, buffer_arg_ref));
+  }
+  free(invocation_data);
+  return undefined;
 }
 
 napi_value node_module_init(napi_env env, napi_value exports) {

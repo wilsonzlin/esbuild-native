@@ -26,7 +26,7 @@
             },
           ],
           "libraries": [
-            "lib/build/libesbuild.a",
+            "../lib/build/libesbuild.a",
           ],
         }],
         ["OS=='win'", {
