@@ -176,31 +176,30 @@ napi_value node_method_minify(napi_env env, napi_callback_info info) {
   // Get the arguments.
   if (napi_get_cb_info(env, info, &argc, argv, &_this, &_data) != napi_ok) {
     assert_ok(napi_throw_error(env, NULL, "Failed to get callback info"));
-    return undefined;
+    goto rollback;
   }
+  napi_value buffer_arg = argv[0];
 
   // Ensure buffer lives long enough until minification has finished.
-  napi_value buffer_arg = argv[0];
   if (napi_create_reference(env, buffer_arg, 1, &buffer_arg_ref) != napi_ok) {
     assert_ok(napi_throw_error(env, NULL, "Failed to create reference for source buffer"));
-    goto cleanup;
+    goto rollback;
   }
   buffer_arg_ref_set = true;
 
   // Get pointer to bytes in buffer.
   void* buffer_data;
   size_t buffer_len;
-  if (napi_get_buffer_info(env, buffer_arg, &buffer_data, &buffer_len) != napi_ok
-      || buffer_len == 0 || buffer_data == NULL) {
+  if (napi_get_buffer_info(env, buffer_arg, &buffer_data, &buffer_len) != napi_ok || buffer_data == NULL) {
     assert_ok(napi_throw_type_error(env, NULL, "Failed to read source buffer"));
-    goto cleanup;
+    goto rollback;
   }
 
   napi_deferred deferred;
   napi_value promise;
   if (napi_create_promise(env, &deferred, &promise) != napi_ok) {
     assert_ok(napi_throw_error(env, NULL, "Failed to create Promise"));
-    goto cleanup;
+    goto rollback;
   }
 
   GoString buffer_as_gostr = {
@@ -220,7 +219,7 @@ napi_value node_method_minify(napi_env env, napi_callback_info info) {
 
   return promise;
 
-cleanup:
+rollback:
   if (buffer_arg_ref_set) {
     // Release source buffer.
     assert_ok(napi_delete_reference(env, buffer_arg_ref));
