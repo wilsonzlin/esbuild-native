@@ -3,7 +3,11 @@
     {
       "target_name": "binding",
       "sources": [
-        "native/binding.c"
+        "native/common.c",
+        "native/nn.c",
+        "native/module.c",
+        "native/receiver.c",
+        "native/transform.c",
       ],
       "include_dirs": [
         "lib/MemoryModule/",
