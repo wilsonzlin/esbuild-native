@@ -12,7 +12,7 @@ Requirements:
 
 Install the dependencies in this folder using `npm i`, and then run `npm run init` and `npm run build`.
 
-To test it out, open `node` and `require('.')`. You'll need to call `startService()` before using `minify(source)`, and then `stopService()` after you're done.
+To test it out, open `node` and `require('.')`. Check [example.js](./example.js) for usage details.
 
 ## Benchmarking
 

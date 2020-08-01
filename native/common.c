@@ -37,15 +37,13 @@ void destroy_ffiapi_gostring_goslice(ffiapi_gostring_goslice slice) {
 bool copy_into_ffiapi_gostring_goslice(napi_env env, napi_value js_array, ffiapi_gostring_goslice* out) {
   bool res_success = true;
 
-  // We will use out->len to track how many GoString elements we've created, in case we need to rollback before we've created all of them.
-  out->len = 0;
-
   uint32_t len;
   nn_ok(napi_get_array_length(env, js_array, &len));
 
   out->data = nn_malloc(sizeof(_GoString_) * len);
   out->cap = len;
-  for ( ; out->len < len; out->len++) {
+  // We will use out->len to track how many GoString elements we've created, in case we need to rollback before we've created all of them.
+  for (out->len = 0; out->len < len; out->len++) {
     napi_value js_elem;
     nn_ok(napi_get_element(env, js_array, out->len, &js_elem));
 
