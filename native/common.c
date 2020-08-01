@@ -37,13 +37,13 @@ void destroy_ffiapi_gostring_goslice(ffiapi_gostring_goslice slice) {
 bool copy_into_ffiapi_gostring_goslice(napi_env env, napi_value js_array, ffiapi_gostring_goslice* out) {
   bool res_success = true;
 
+  // We will use out->len to track how many GoString elements we've created, in case we need to rollback before we've created all of them.
   out->len = 0;
 
   uint32_t len;
   nn_ok(napi_get_array_length(env, js_array, &len));
 
-  // Use zero memory so that freeing in rollback is free(NULL) for last allocated element.
-  out->data = nn_calloc(len, sizeof(_GoString_));
+  out->data = nn_malloc(sizeof(_GoString_) * len);
   out->cap = len;
   for ( ; out->len < len; out->len++) {
     napi_value js_elem;
@@ -106,7 +106,7 @@ bool copy_into_ffiapi_define_array(napi_env env, napi_value js_array, ffiapi_def
 rollback:
   res_success = false;
   // If we didn't complete the array, the last element might have partial data that needs to be cleaned up.
-  destroy_ffiapi_define_array(ary, i + (i == len));
+  destroy_ffiapi_define_array(ary, i + (i < len));
 
 cleanup:
 
@@ -149,7 +149,7 @@ bool copy_into_ffiapi_engine_array(napi_env env, napi_value js_array, ffiapi_eng
 rollback:
   res_success = false;
   // If we didn't complete the array, the last element might have partial data that needs to be cleaned up.
-  destroy_ffiapi_engine_array(ary, i + (i == len));
+  destroy_ffiapi_engine_array(ary, i + (i < len));
 
 cleanup:
 
