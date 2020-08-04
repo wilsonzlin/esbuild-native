@@ -2,13 +2,17 @@
 #include "esb.h"
 #include "nn.h"
 
+static char DUMMY_STR[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
 // Copies a JavaScript string into a heap-allocated UTF-8 GoString.
 _GoString_ copy_into_gostring(napi_env env, napi_value js_val) {
   size_t len;
   nn_ok(napi_get_value_string_utf8(env, js_val, NULL, 0, &len));
   void* buf;
   if (len == 0) {
-    buf = NULL;
+    // Sometimes Go will try and deref this, even when len is zero, so provide a
+    // pointer that is definitely not NULL.
+    buf = DUMMY_STR;
   } else {
     buf = nn_malloc(len + 1);
     nn_ok(napi_get_value_string_utf8(env, js_val, buf, len + 1, NULL));
@@ -21,7 +25,9 @@ _GoString_ copy_into_gostring(napi_env env, napi_value js_val) {
 }
 
 void destroy_gostring(_GoString_ gostr) {
-  free(gostr.p);
+  if (gostr.p != DUMMY_STR) {
+    free(gostr.p);
+  }
   gostr.p = NULL;
 }
 
